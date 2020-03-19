@@ -1,15 +1,15 @@
 " Vim universal .txt syntax file
 " For: 		Plaint text file
-" By: 		Zheng
+" By: 		Zheng (Linzheng@gmail.com)
 " Date: 	2020.03.18
 " ---------------------------------
 "  https://vimhelp.org/usr_44.txt.html
 " ---------------------------------
 
 if version < 600
-  syntax clear
+	syntax clear
 elseif exists("b:current_syntax")
-  finish
+	finish
 endif
 
 syn case ignore
