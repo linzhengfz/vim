@@ -1,6 +1,8 @@
 " For vim 7.4 terminal
 " Tested on Centos7, Debian 10
 " 2019.09.26
+" feature1 test
+" modify on "master"
 
 set nocp 	" nocompatible: less Vi-compatible
 colo darkblue 	" colorscheme
