@@ -1,4 +1,5 @@
-" For vim 7.4 terminal(centos7)
+" For vim 7.4 terminal
+" Tested on Centos7, Debian 10
 " 2019.09.26
 
 set nocp 	" nocompatible: less Vi-compatible
