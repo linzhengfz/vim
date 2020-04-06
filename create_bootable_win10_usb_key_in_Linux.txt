@@ -1,0 +1,140 @@
+
+Create UEFI win10 installation USB key in Linux
+
+{ steps }
+
+1. Download ISO
+
+2. Create GPT and 2 partitions on USB key(fat32 & NTFS).
+
+3. Copy files to USB key.
+
+4. Insert USB key to new PC, select UEFI boot.
+
+{ overview }
+
+The Windows installation will start on the FAT32 partition, but when encountering the empty "sources" folder it will look for the "sources/ei.cfg" file on the NTFS partition and continue the installation without any prompts.
+
+NOTE
+
+"dd" does NOT work for win10 1909.
+
+"UNetbootin" does NOT work either.
+
+"WinUSB" does NOT work with Windows 10.
+
+some PC UEFI boot can NOT find ntfs partition.
+
+Install.wim is larger than 4G, so we can NOT copy it into a fat32 partition.
+
+{ Download }
+
+Download win10 from Microsoft.
+
+e.g. win10 1909, 64-bit, english. (November 2019 Update)
+
+https://software-download.microsoft.com/db/Win10_1909_English_x64.iso?t=7689c9d4-3557-4eab-9f21-70f737ef980d&e=1586269819&h=d694620d1b52f0e925fd0c2e9686266b
+
+OR download another version.
+
+https://www.microsoft.com/en-ca/software-download/windows10ISO
+
+{ Verify checksum }
+
+$ sha256sum Win10_1909_English_x64.iso 
+01bf1eb643f7e50d0438f4f74fb91468d35cde2c82b07abc1390d47fc6a356be
+
+{ Create working directories }
+
+fat32 		to mount USB key's fat32 partition.
+ntfs 		to mount USB key's ntfs partition.
+iso 		to mount win10 iso.
+$ sudo mkdir -p /mnt/win10/{fat32,ntfs,iso}
+
+$ sudo mount ~/Desktop/Win10_1909_English_x64.iso /mnt/win10/iso
+
+{ umount USB }
+
+Some Linux distributions will auto mount USB key.
+
+Check USB key
+$ mount
+
+Umount all the parts of USB. e.g.
+$ umount /media/abc/66F0-46A2
+
+{ create parts }
+
+Check USB key device name
+$ lsblk
+
+Delete all the partitions
+// /dev/sdb 	replace it with real device name
+$ sudo sfdisk --delete /dev/sdb
+
+Show partition table
+$ sudo parted /dev/sdb print
+
+Create gpt table
+$ sudo parted -s /dev/sdb mklabel gpt
+
+Create FAT32 part
+$ sudo parted -s /dev/sdb mkpart primary fat32 0% 1024M
+$ lsblk -f
+$ sudo mkfs.fat -F32 /dev/sdb1
+
+Create NTFS part
+$ sudo parted -s /dev/sdb mkpart primary ntfs 1024M 100%
+$ mkfs.ntfs -Q -v /dev/sdb2 -s 4096
+
+Show partitions on sdb
+$ sudo parted /dev/sdb print
+
+{ mount USB key parts }
+
+sdb1 	part of fat32, verify by lsblk.
+$ sudo mount /dev/sdb1 /mnt/win10/fat32/
+$ sudo mount /dev/sdb2 /mnt/win10/ntfs/
+
+{ copy files to fat32 part }
+
+Copy all files of iso, except "sources" dir to fat32.
+$ sudo rsync -avr --exclude 'sources' /mnt/win10/iso/ /mnt/win10/fat32/
+
+Create a empty "sources" dir
+$ sudo mkdir /mnt/win10/fat32/sources
+
+$ vi ei.cfg
+/*{{{*/
+[CHANNEL]
+Retail
+/*}}}*/
+
+$ sudo cp ei.cfg /mnt/win10/fat32/sources/
+
+$ sudo cp /mnt/win10/iso/sources/boot.wim /mnt/win10/fat32/sources/
+
+{ copy files to NTFS part }
+
+$ sudo rsync -avr /mnt/win10/iso/ /mnt/win10/ntfs/
+
+{ umount 2 parts }
+
+$ sudo umount /mnt/win10/fat32/
+$ sudo umount /mnt/win10/ntfs/
+
+Disconnect USB key
+
+{ Config PC to be installed }
+
+// BIOS Keys will be different.
+
+POST -> F1 (BIOS)
+
+UEFI/Legacy Boot: 	Both
+Boot Priority: 		UEFI first
+CSM Support: 		Yes
+
+Save, exit.
+
+POST -> F12 (Boot menu) -> SELECT USB HDD
